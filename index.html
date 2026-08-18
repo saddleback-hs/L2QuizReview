@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<!--
+╔══════════════════════════════════════════════════════════════════════╗
+║           TEACHER SETUP — READ BEFORE UPLOADING TO GITHUB           ║
+╠══════════════════════════════════════════════════════════════════════╣
+║                                                                      ║
+║  STEP 1 — Create a Google Sheet                                      ║
+║    • Go to sheets.google.com and create a new blank spreadsheet.     ║
+║    • Name it anything (e.g. "Econ Quiz Responses").                  ║
+║                                                                      ║
+║  STEP 2 — Add an Apps Script                                         ║
+║    • In the Sheet: Extensions → Apps Script                          ║
+║    • Delete any default code, paste the script below, then Save.    ║
+║                                                                      ║
+║  STEP 3 — Deploy the script                                          ║
+║    • Click Deploy → New deployment                                   ║
+║    • Type: Web app                                                   ║
+║    • Execute as: Me                                                  ║
+║    • Who has access: Anyone                                          ║
+║    • Click Deploy, copy the Web App URL                              ║
+║                                                                      ║
+║  STEP 4 — Paste the URL below                                        ║
+║    • Find SCRIPT_URL near the top of the <script> section           ║
+║    • Replace the placeholder with your copied URL                    ║
+║                                                                      ║
+║  STEP 5 — Push to GitHub Pages & link in Google Classroom           ║
+║    • Commit this file to your repo                                   ║
+║    • GitHub Pages URL → Google Classroom assignment link             ║
+║                                                                      ║
+║  ── APPS SCRIPT TO PASTE ────────────────────────────────────────── ║
+║                                                                      ║
+║  function doPost(e) {                                                ║
+║    try {                                                             ║
+║      var ss = SpreadsheetApp.getActiveSpreadsheet();                 ║
+║      var sheet = ss.getActiveSheet();                                ║
+║      var data = JSON.parse(e.postData.contents);                     ║
+║      if (sheet.getLastRow() === 0) {                                 ║
+║        var h = ['Timestamp','Name','Student ID','Email','Mode'];     ║
+║        for (var i = 0; i < data.answers.length; i++) {              ║
+║          h.push('Q'+(i+1)+' Answer','Q'+(i+1)+' Correct?');         ║
+║        }                                                             ║
+║        h.push('Score','Total','Percent');                            ║
+║        sheet.appendRow(h);                                           ║
+║      }                                                               ║
+║      var row = [new Date().toLocaleString(),                         ║
+║        data.name, data.studentId, data.email, data.mode];           ║
+║      data.answers.forEach(function(a) {                              ║
+║        row.push(a.chosen, a.correct ? 'Yes' : 'No');                ║
+║      });                                                             ║
+║      row.push(data.score, data.total, data.percent+'%');            ║
+║      sheet.appendRow(row);                                           ║
+║      return ContentService                                           ║
+║        .createTextOutput(JSON.stringify({status:'success'}))         ║
+║        .setMimeType(ContentService.MimeType.JSON);                   ║
+║    } catch(err) {                                                    ║
+║      return ContentService                                           ║
+║        .createTextOutput(JSON.stringify({status:'error',             ║
+║          message:err.toString()}))                                   ║
+║        .setMimeType(ContentService.MimeType.JSON);                   ║
+║    }                                                                 ║
+║  }                                                                   ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 2: Opportunity Cost & Trade-Offs</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --accent: #4f7cff;
+    --green: #34d399;
+    --red: #f87171;
+    --amber: #fbbf24;
+    --text: #e8eaf6;
+    --muted: #8b91b3;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+  }
+
+  /* ── Shared ── */
+  .screen { width: 100%; max-width: 640px; display: none; flex-direction: column; align-items: center; }
+  .screen.active { display: flex; }
+
+  .lesson-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  /* ── Setup Warning ── */
+  .setup-banner {
+    width: 100%;
+    max-width: 640px;
+    background: rgba(248,113,113,0.1);
+    border: 1.5px solid rgba(248,113,113,0.4);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 22px;
+    display: none;
+  }
+  .setup-banner h3 { color: var(--red); font-size: 0.88rem; margin-bottom: 6px; }
+  .setup-banner p { color: #fca5a5; font-size: 0.82rem; line-height: 1.55; }
+  .setup-banner code {
+    display: block;
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: var(--amber);
+    word-break: break-all;
+  }
+
+  /* ── Login Screen ── */
+  .login-card {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 30px 28px;
+  }
+
+  .login-card h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .login-card p {
+    font-size: 0.83rem;
+    color: var(--muted);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  .field {
+    margin-bottom: 16px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+
+  .field input {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 0.92rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .field input:focus { border-color: var(--accent); }
+  .field input.error { border-color: var(--red); }
+
+  .field-error {
+    font-size: 0.75rem;
+    color: var(--red);
+    margin-top: 5px;
+    display: none;
+  }
+
+  .mode-select {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+
+  .mode-option {
+    padding: 13px 14px;
+    border-radius: 11px;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    font-family: inherit;
+    color: var(--text);
+  }
+
+  .mode-option:hover { border-color: var(--accent); }
+
+  .mode-option.selected {
+    border-color: var(--accent);
+    background: rgba(79,124,255,0.1);
+  }
+
+  .mode-option.selected-rem {
+    border-color: var(--amber);
+    background: rgba(251,191,36,0.1);
+  }
+
+  .mode-option .mo-icon { font-size: 1.2rem; margin-bottom: 5px; display: block; }
+  .mode-option .mo-title { font-size: 0.88rem; font-weight: 600; display: block; margin-bottom: 2px; }
+  .mode-option .mo-desc { font-size: 0.73rem; color: var(--muted); line-height: 1.4; }
+
+  .btn-start {
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-start:hover { background: #3a67f0; }
+
+  /* ── Student badge (shown during quiz) ── */
+  .student-badge {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 16px;
+    margin-bottom: 18px;
+    font-size: 0.8rem;
+  }
+
+  .badge-name { font-weight: 600; color: var(--text); }
+  .badge-meta { color: var(--muted); font-size: 0.74rem; }
+  .badge-right { text-align: right; }
+
+  /* ── Mode tabs ── */
+  .mode-tabs {
+    display: flex;
+    gap: 0;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 18px;
+    width: 100%;
+  }
+
+  .mode-tab {
+    flex: 1;
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 0.83rem;
+    font-weight: 600;
+    background: var(--surface);
+    color: var(--muted);
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .mode-tab:not(:last-child) { border-right: 1.5px solid var(--border); }
+  .mode-tab:hover { background: var(--surface2); color: var(--text); }
+  .mode-tab.active { background: var(--accent); color: #fff; }
+  .mode-tab.rem-tab.active { background: var(--amber); color: #1a1400; }
+  .mode-badge { font-size: 0.65rem; padding: 1px 6px; border-radius: 999px; background: rgba(255,255,255,0.2); margin-left: 5px; font-weight: 700; }
+
+  /* ── Remediation banner ── */
+  .remediation-banner {
+    display: none;
+    width: 100%;
+    background: rgba(251,191,36,0.1);
+    border: 1.5px solid rgba(251,191,36,0.35);
+    border-radius: 12px;
+    padding: 11px 16px;
+    font-size: 0.82rem;
+    color: var(--amber);
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .remediation-banner strong { display: block; margin-bottom: 2px; }
+
+  /* ── Progress ── */
+  .progress-wrap { width: 100%; margin-bottom: 16px; }
+
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+
+  .progress-bar { height: 5px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #7c4fff);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── Score chips ── */
+  .score-row { display: flex; gap: 12px; margin-bottom: 18px; font-size: 0.8rem; }
+  .chip {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: 999px;
+    border: 1.5px solid var(--border); background: var(--surface); color: var(--muted);
+  }
+  .chip.correct { border-color: var(--green); color: var(--green); background: rgba(52,211,153,0.08); }
+  .chip.incorrect { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.08); }
+
+  /* ── Question card ── */
+  .question-card {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 26px 26px 22px;
+    margin-bottom: 14px;
+  }
+
+  .q-number { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+  .q-text { font-size: 1.02rem; font-weight: 500; line-height: 1.55; color: var(--text); margin-bottom: 20px; }
+
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+
+  .choice {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 13px 16px; border-radius: 11px;
+    border: 1.5px solid var(--border); background: var(--surface2);
+    cursor: pointer; transition: all 0.15s;
+    text-align: left; width: 100%; font-family: inherit; color: var(--text);
+  }
+  .choice:hover:not(:disabled) { border-color: var(--accent); background: rgba(79,124,255,0.08); }
+  .choice:disabled { cursor: default; }
+  .choice.selected-correct { border-color: var(--green); background: rgba(52,211,153,0.1); }
+  .choice.selected-wrong { border-color: var(--red); background: rgba(248,113,113,0.1); }
+  .choice.reveal-correct { border-color: var(--green); background: rgba(52,211,153,0.07); }
+
+  .choice-letter {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.78rem; font-weight: 700; flex-shrink: 0; transition: all 0.15s;
+  }
+  .selected-correct .choice-letter { background: var(--green); border-color: var(--green); color: #0f1117; }
+  .selected-wrong .choice-letter { background: var(--red); border-color: var(--red); color: #0f1117; }
+  .reveal-correct .choice-letter { background: rgba(52,211,153,0.2); border-color: var(--green); color: var(--green); }
+  .choice-text { font-size: 0.88rem; line-height: 1.45; padding-top: 2px; }
+
+  /* ── Explanation ── */
+  .explanation {
+    width: 100%; border-radius: 12px; padding: 14px 18px;
+    font-size: 0.87rem; line-height: 1.55; margin-bottom: 14px;
+    display: none; border: 1.5px solid;
+  }
+  .explanation.correct { background: rgba(52,211,153,0.08); border-color: rgba(52,211,153,0.3); color: var(--green); }
+  .explanation.wrong { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.3); color: #fca5a5; }
+  .explanation .exp-label { font-weight: 700; margin-bottom: 4px; }
+  .explanation .exp-body { color: var(--text); opacity: 0.85; }
+
+  /* ── Controls ── */
+  .controls { display: flex; gap: 10px; width: 100%; flex-wrap: wrap; margin-bottom: 14px; }
+
+  .btn {
+    flex: 1; padding: 12px 20px; border-radius: 11px;
+    border: 1.5px solid var(--border); background: var(--surface);
+    color: var(--text); font-size: 0.88rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; font-family: inherit;
+  }
+  .btn:hover { border-color: var(--accent); background: var(--surface2); }
+  .btn:active { transform: scale(0.98); }
+  .btn-next { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-next:hover { background: #3a67f0; border-color: #3a67f0; }
+  .btn-next:disabled { opacity: 0.35; cursor: default; transform: none; }
+
+  .kbd-hint { font-size: 0.72rem; color: var(--muted); text-align: center; }
+  kbd { padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface2); font-size: 0.68rem; font-family: inherit; }
+
+  /* ── Summary overlay ── */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+    z-index: 100; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .overlay.show { display: flex; }
+
+  .modal {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 22px; padding: 36px 32px;
+    max-width: 460px; width: 100%; text-align: center;
+    max-height: 90vh; overflow-y: auto;
+  }
+
+  .modal-emoji { font-size: 2.8rem; margin-bottom: 10px; }
+  .modal h2 { font-size: 1.3rem; margin-bottom: 4px; }
+  .modal .sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 22px; }
+  .score-display { font-size: 3.2rem; font-weight: 800; margin-bottom: 4px; line-height: 1; }
+  .score-label { font-size: 0.82rem; color: var(--muted); margin-bottom: 22px; }
+
+  .student-summary {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    text-align: left;
+    margin-bottom: 16px;
+    font-size: 0.82rem;
+  }
+  .student-summary .ss-row { display: flex; justify-content: space-between; padding: 3px 0; }
+  .student-summary .ss-label { color: var(--muted); }
+  .student-summary .ss-val { color: var(--text); font-weight: 500; }
+
+  .review-list { text-align: left; margin-bottom: 18px; display: flex; flex-direction: column; gap: 8px; }
+  .review-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 14px; border-radius: 10px;
+    background: var(--surface2); font-size: 0.8rem; line-height: 1.4;
+  }
+  .review-icon { flex-shrink: 0; font-size: 1rem; margin-top: 1px; }
+  .review-text { color: var(--muted); }
+  .review-text strong { color: var(--text); display: block; margin-bottom: 2px; }
+
+  .submit-status {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; border-radius: 10px;
+    font-size: 0.83rem; margin-bottom: 14px;
+    background: var(--surface2); color: var(--muted);
+    border: 1.5px solid var(--border);
+  }
+  .submit-status.success { background: rgba(52,211,153,0.08); border-color: rgba(52,211,153,0.3); color: var(--green); }
+  .submit-status.error { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.3); color: #fca5a5; }
+  .submit-spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .modal-actions { display: flex; flex-direction: column; gap: 10px; }
+  .btn-modal {
+    width: 100%; padding: 13px; border-radius: 12px; border: none;
+    font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.15s;
+  }
+  .btn-modal-primary { background: var(--accent); color: #fff; }
+  .btn-modal-primary:hover { background: #3a67f0; }
+  .btn-modal-amber { background: rgba(251,191,36,0.15); border: 1.5px solid var(--amber); color: var(--amber); }
+  .btn-modal-amber:hover { background: rgba(251,191,36,0.25); }
+  .btn-modal-ghost { background: var(--surface2); border: 1.5px solid var(--border); color: var(--muted); }
+  .btn-modal-ghost:hover { border-color: var(--accent); color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- ── Setup warning (shown when SCRIPT_URL not configured) ── -->
+<div class="setup-banner" id="setup-banner">
+  <h3>⚠️ Teacher Setup Required</h3>
+  <p>The Google Sheets submission URL is not configured. Open this file, find <strong>SCRIPT_URL</strong> near the top of the &lt;script&gt; section, and replace the placeholder with your Apps Script Web App URL. See the comment block at the top of the HTML file for full instructions.</p>
+  <code>const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxy1UEZshJXD4ke0K46m8gvG7bObLmK7hMNy8RSR6xFZI4uxVMFz8jodTLzJcOY85vMYw/exec';</code>
+</div>
+
+<!-- ═══════════════════ SCREEN 1: STUDENT LOGIN ═══════════════════ -->
+<div class="screen active" id="screen-login">
+  <div class="lesson-label">Lesson 2 · Savvas Realize</div>
+  <h1>Opportunity Cost &amp; Trade-Offs</h1>
+
+  <div class="login-card">
+    <h2>Sign in to begin</h2>
+    <p>Your teacher will be able to see your answers and score. Use your school information.</p>
+
+    <div class="field">
+      <label for="inp-name">Full Name</label>
+      <input type="text" id="inp-name" placeholder="e.g. Maria Rodriguez" autocomplete="name">
+      <div class="field-error" id="err-name">Please enter your full name.</div>
+    </div>
+
+    <div class="field">
+      <label for="inp-id">Student ID</label>
+      <input type="text" id="inp-id" placeholder="e.g. 123456" autocomplete="off">
+      <div class="field-error" id="err-id">Please enter your student ID.</div>
+    </div>
+
+    <div class="field">
+      <label for="inp-email">School Email</label>
+      <input type="email" id="inp-email" placeholder="e.g. maria@school.edu" autocomplete="email">
+      <div class="field-error" id="err-email">Please enter a valid email address.</div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">Choose Mode</label>
+      <div class="mode-select">
+        <button class="mode-option selected" id="opt-quiz" onclick="selectMode('quiz')">
+          <span class="mo-icon">📋</span>
+          <span class="mo-title">Original Quiz</span>
+          <span class="mo-desc">5 multiple-choice questions from today's lesson</span>
+        </button>
+        <button class="mode-option" id="opt-rem" onclick="selectMode('remediation')">
+          <span class="mo-icon">🔁</span>
+          <span class="mo-title">Remediation</span>
+          <span class="mo-desc">10 deeper questions on key vocabulary differences</span>
+        </button>
+      </div>
+    </div>
+
+    <button class="btn-start" onclick="startQuiz()">Start Quiz →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN 2: QUIZ ═══════════════════ -->
+<div class="screen" id="screen-quiz">
+
+  <!-- Student badge -->
+  <div class="student-badge" id="student-badge">
+    <div>
+      <div class="badge-name" id="badge-name"></div>
+      <div class="badge-meta" id="badge-meta"></div>
+    </div>
+    <div class="badge-right">
+      <div class="badge-meta" id="badge-email"></div>
+    </div>
+  </div>
+
+  <!-- Mode tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-quiz" onclick="switchMode('quiz')">
+      📋 Original Quiz<span class="mode-badge" id="tab-quiz-count">5 Qs</span>
+    </button>
+    <button class="mode-tab rem-tab" id="tab-rem" onclick="switchMode('remediation')">
+      🔁 Remediation<span class="mode-badge">10 Qs</span>
+    </button>
+  </div>
+
+  <div class="remediation-banner" id="rem-banner">
+    <strong>🎯 Remediation Mode</strong>
+    These questions target the most-confused concepts: marginal cost vs. marginal benefit vs. opportunity cost, and how opportunity cost differs from a cost/benefit analysis.
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="prog-label">Question 1 of 5</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="score-row">
+    <div class="chip correct" id="chip-correct">✓ 0 correct</div>
+    <div class="chip incorrect" id="chip-wrong">✗ 0 incorrect</div>
+  </div>
+
+  <div class="question-card">
+    <div class="q-number" id="q-num">Question 1</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="choices" id="choices"></div>
+  </div>
+
+  <div class="explanation" id="explanation">
+    <div class="exp-label" id="exp-label"></div>
+    <div class="exp-body" id="exp-body"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" onclick="goBack()">← Back</button>
+    <button class="btn btn-next" id="btn-next" onclick="nextQ()" disabled>Next →</button>
+  </div>
+
+  <div class="kbd-hint"><kbd>Enter</kbd> / <kbd>→</kbd> advance &nbsp;·&nbsp; <kbd>1</kbd>–<kbd>4</kbd> pick answer</div>
+</div>
+
+<!-- ═══════════════════ SUMMARY OVERLAY ═══════════════════ -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-emoji" id="modal-emoji">🎉</div>
+    <h2 id="modal-title">Quiz Complete!</h2>
+    <div class="sub" id="modal-sub">Lesson 2: Opportunity Cost &amp; Trade-Offs</div>
+
+    <div class="score-display" id="modal-score"></div>
+    <div class="score-label" id="modal-score-label"></div>
+
+    <!-- Student info recap -->
+    <div class="student-summary" id="modal-student">
+      <div class="ss-row"><span class="ss-label">Name</span><span class="ss-val" id="sum-name"></span></div>
+      <div class="ss-row"><span class="ss-label">Student ID</span><span class="ss-val" id="sum-id"></span></div>
+      <div class="ss-row"><span class="ss-label">Email</span><span class="ss-val" id="sum-email"></span></div>
+      <div class="ss-row"><span class="ss-label">Mode</span><span class="ss-val" id="sum-mode"></span></div>
+    </div>
+
+    <div class="review-list" id="review-list"></div>
+
+    <!-- Submission status -->
+    <div class="submit-status" id="submit-status">
+      <div class="submit-spinner" id="submit-spinner"></div>
+      <span id="submit-msg">Submitting your answers…</span>
+    </div>
+
+    <div class="modal-actions" id="modal-actions">
+      <button class="btn-modal btn-modal-amber" id="btn-remediation" onclick="switchMode('remediation'); document.getElementById('overlay').classList.remove('show');" style="display:none;">
+        🔁 Try Remediation Questions →
+      </button>
+      <button class="btn-modal btn-modal-primary" onclick="restart()">↺ Study Again</button>
+      <button class="btn-modal btn-modal-ghost" onclick="goBack()">← Change Mode / Student</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxy1UEZshJXD4ke0K46m8gvG7bObLmK7hMNy8RSR6xFZI4uxVMFz8jodTLzJcOY85vMYw/exec';
+
+// ── Student state ──
+let student = { name: '', studentId: '', email: '' };
+let selectedLoginMode = 'quiz';
+
+// ── Quiz data ──
+const QUIZ_QUESTIONS = [
+  {
+    q: 'What are economists referring to when they say "choosing is refusing"?',
+    choices: ['Opportunity cost', '"Guns or butter"', 'Marginal cost', 'Thinking at the margin'],
+    correct: 0,
+    explanation: 'When you choose one thing, you automatically refuse (give up) another. This is the essence of opportunity cost — every choice has a cost of the next-best alternative forgone.'
+  },
+  {
+    q: 'Because of scarcity, every decision involves a',
+    choices: ['cost/benefit analysis.', 'trade-off.', 'marginal cost.', 'marginal benefit.'],
+    correct: 1,
+    explanation: 'Scarcity means resources are limited, so choosing one option always means giving something else up — that\'s a trade-off. Every decision involves a trade-off because of scarcity.'
+  },
+  {
+    q: 'A basketball coach is performing a cost/benefit analysis in order to determine if more hours of practice would help the team score more points. The coach\'s action is an example of',
+    choices: ['individual trade-offs.', 'opportunity cost.', 'marginal thinking.', 'marginal benefit.'],
+    correct: 2,
+    explanation: 'The coach is weighing the extra (marginal) benefit of one more hour of practice against its cost. Analyzing decisions "at the margin" — one unit at a time — is called marginal thinking.'
+  },
+  {
+    q: 'The phrase "guns or butter" expresses the idea that',
+    choices: [
+      'individuals, businesses, and governments all face trade-offs.',
+      'factor resources are limited.',
+      'government decisions involve opportunity cost.',
+      'government decisions involve trade-offs between military and domestic needs.'
+    ],
+    correct: 0,
+    explanation: '"Guns or butter" is a classic economics metaphor showing that any society must choose how to allocate limited resources between competing needs. It illustrates that trade-offs are universal — not just for governments.'
+  },
+  {
+    q: 'An opportunity cost is',
+    choices: [
+      'the best alternative that is given up when a decision is made.',
+      'the worst alternative that is given up when a decision is made.',
+      'a choice that is made when no alternative is very good.',
+      'the cost of making decisions related to producing goods.'
+    ],
+    correct: 0,
+    explanation: 'Opportunity cost is specifically the BEST alternative forgone — not just any alternative. When you choose option A, the opportunity cost is the value of the next-best option B that you could have chosen instead.'
+  }
+];
+
+const REMEDIATION_QUESTIONS = [
+  {
+    tag: 'OC vs CBA',
+    q: 'A student decides to spend Saturday studying instead of working a part-time job. The $80 she would have earned is her ___.',
+    choices: ['Opportunity cost', 'Cost/benefit analysis', 'Marginal cost', 'Trade-off'],
+    correct: 0,
+    explanation: 'The $80 in wages is the BEST alternative given up — that\'s the definition of opportunity cost. A cost/benefit analysis is the process of comparing costs and benefits before making a decision; here the decision is already made, and we\'re naming what was sacrificed.'
+  },
+  {
+    tag: 'OC vs CBA',
+    q: 'Before buying a new laptop, Marcus lists its price ($900) and the time saved on homework, then decides whether to buy it. Marcus is doing a ___.',
+    choices: ['Trade-off evaluation', 'Opportunity cost calculation', 'Cost/benefit analysis', 'Marginal thinking exercise'],
+    correct: 2,
+    explanation: 'A cost/benefit analysis is the deliberate process of weighing total costs against total benefits BEFORE a decision. Opportunity cost is the specific value of the next-best alternative given up — a single number, not a process.'
+  },
+  {
+    tag: 'OC vs CBA',
+    q: 'What is the key difference between opportunity cost and a cost/benefit analysis?',
+    choices: [
+      'Opportunity cost only applies to governments; cost/benefit analysis applies to individuals.',
+      'Opportunity cost is the value of one forgone alternative; a cost/benefit analysis weighs all costs against all benefits.',
+      'A cost/benefit analysis always results in choosing the cheapest option.',
+      'Opportunity cost and cost/benefit analysis mean the same thing.'
+    ],
+    correct: 1,
+    explanation: 'Opportunity cost = the single best alternative you give up. Cost/benefit analysis = a broader decision-making tool that adds up ALL relevant costs and benefits. A cost/benefit analysis may reveal an opportunity cost, but they are not the same concept.'
+  },
+  {
+    tag: 'MC vs MB',
+    q: 'A factory can produce one more unit of output for an additional $15. That $15 is the factory\'s ___.',
+    choices: ['Marginal benefit', 'Opportunity cost', 'Marginal cost', 'Trade-off'],
+    correct: 2,
+    explanation: 'Marginal cost is the extra cost of producing one MORE unit. The key word is "additional" — that signals you\'re on the margin. Marginal benefit would be the extra revenue or satisfaction gained from that one more unit.'
+  },
+  {
+    tag: 'MC vs MB',
+    q: 'A student earns a B+ by studying 2 hours. Studying a 3rd hour would raise her grade to an A. The extra value of that A is the ___ of the third hour.',
+    choices: ['Opportunity cost', 'Marginal cost', 'Marginal benefit', 'Trade-off'],
+    correct: 2,
+    explanation: 'Marginal benefit is the additional gain from one more unit of an activity. The improved grade is the benefit of that one extra hour. The marginal COST would be the time and effort that hour requires.'
+  },
+  {
+    tag: 'MC vs MB',
+    q: 'Which statement correctly distinguishes marginal cost from marginal benefit?',
+    choices: [
+      'Marginal cost is the total spent on a good; marginal benefit is total satisfaction from it.',
+      'Marginal cost is the extra cost of one more unit; marginal benefit is the extra gain from one more unit.',
+      'Marginal benefit is always greater than marginal cost.',
+      'Marginal cost applies to producers only; marginal benefit applies to consumers only.'
+    ],
+    correct: 1,
+    explanation: 'Both concepts are "at the margin" — focused on ONE additional unit. Marginal cost asks: what does it cost to do one more? Marginal benefit asks: what do I gain from one more? Rational decision-makers continue as long as MB ≥ MC.'
+  },
+  {
+    tag: 'OC vs MC',
+    q: 'A city spends $5 million paving a new road, giving up a park that would have cost $5 million. The forgone park is best described as the ___ of the road.',
+    choices: ['Marginal cost', 'Opportunity cost', 'Marginal benefit', 'Cost/benefit analysis'],
+    correct: 1,
+    explanation: 'The park is the BEST alternative the city gave up — that is opportunity cost. Marginal cost would be the extra cost of one more mile of road. Opportunity cost focuses on what is sacrificed; marginal cost focuses on the cost of one more unit of output.'
+  },
+  {
+    tag: 'OC vs MC',
+    q: 'A coffee shop can stay open one extra hour. Staff wages for that hour = $30; expected revenue = $20. What should the shop do, and what concept applies?',
+    choices: [
+      'Stay open — the opportunity cost is positive.',
+      'Close — the marginal cost ($30) exceeds the marginal benefit ($20).',
+      'Stay open — cost/benefit analysis always favors more hours.',
+      'Close — the opportunity cost of staying open is too high.'
+    ],
+    correct: 1,
+    explanation: 'When marginal cost exceeds marginal benefit, a rational decision-maker stops. MC ($30) > MB ($20), so the shop should close. This is marginal thinking in action — not the same as opportunity cost (what else the owner could do with that time).'
+  },
+  {
+    tag: 'All Concepts',
+    q: 'Jamila gives up a $12/hr babysitting job to volunteer at a shelter. Which term BEST describes the $12/hr she gives up?',
+    choices: ['Marginal cost', 'Marginal benefit', 'Opportunity cost', 'Cost/benefit analysis'],
+    correct: 2,
+    explanation: 'The $12/hr wage is the best alternative Jamila gives up by choosing to volunteer — that is her opportunity cost. It is NOT a marginal cost (extra cost per unit of an activity) and it is NOT a cost/benefit analysis (a deliberate weighing process).'
+  },
+  {
+    tag: 'All Concepts',
+    q: 'Which scenario is the BEST example of marginal thinking?',
+    choices: [
+      'A student calculates the total tuition cost of a 4-year degree before enrolling.',
+      'A country decides between spending its entire budget on healthcare or defense.',
+      'A restaurant owner asks: "Will adding one more table earn more than it costs to fit it?"',
+      'A shopper realizes buying a car means giving up a vacation.'
+    ],
+    correct: 2,
+    explanation: 'Marginal thinking means asking about ONE more unit: one more table, one more hour, one more item. The restaurant owner\'s question is exactly that — comparing the marginal cost of one extra table to its marginal benefit. The other choices involve totals, entire budgets, or identifying opportunity costs.'
+  }
+];
+
+// ── Quiz state ──
+let mode = 'quiz';
+let QUESTIONS = QUIZ_QUESTIONS;
+let current = 0;
+let answered = false;
+let results = []; // { chosen: str, correct: bool }
+
+// ── Show setup warning if URL not configured ──
+if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+  document.getElementById('setup-banner').style.display = 'block';
+}
+
+// ── Login screen ──
+function selectMode(m) {
+  selectedLoginMode = m;
+  document.getElementById('opt-quiz').className = 'mode-option' + (m === 'quiz' ? ' selected' : '');
+  document.getElementById('opt-rem').className = 'mode-option' + (m === 'remediation' ? ' selected-rem' : '');
+}
+
+function startQuiz() {
+  const name = document.getElementById('inp-name').value.trim();
+  const id = document.getElementById('inp-id').value.trim();
+  const email = document.getElementById('inp-email').value.trim();
+  let valid = true;
+
+  [['inp-name','err-name', !name],
+   ['inp-id','err-id', !id],
+   ['inp-email','err-email', !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)]
+  ].forEach(([inp, err, bad]) => {
+    document.getElementById(inp).classList.toggle('error', bad);
+    document.getElementById(err).style.display = bad ? 'block' : 'none';
+    if (bad) valid = false;
+  });
+
+  if (!valid) return;
+
+  student = { name, studentId: id, email };
+  mode = selectedLoginMode;
+  QUESTIONS = mode === 'quiz' ? QUIZ_QUESTIONS : REMEDIATION_QUESTIONS;
+  current = 0;
+  answered = false;
+  results = [];
+
+  // Populate badge
+  document.getElementById('badge-name').textContent = name;
+  document.getElementById('badge-meta').textContent = 'ID: ' + id;
+  document.getElementById('badge-email').textContent = email;
+
+  // Switch screen
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('screen-quiz').classList.add('active');
+
+  // Apply mode UI
+  applyModeUI();
+  renderQuestion();
+  updateChips();
+}
+
+function goBack() {
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('screen-quiz').classList.remove('active');
+  document.getElementById('screen-login').classList.add('active');
+}
+
+// ── Mode switching (during quiz) ──
+function switchMode(m) {
+  mode = m;
+  QUESTIONS = m === 'quiz' ? QUIZ_QUESTIONS : REMEDIATION_QUESTIONS;
+  current = 0;
+  answered = false;
+  results = [];
+  applyModeUI();
+  renderQuestion();
+  updateChips();
+  document.getElementById('prog-fill').style.width = '0%';
+  document.getElementById('prog-pct').textContent = '0%';
+}
+
+function applyModeUI() {
+  const isRem = mode === 'remediation';
+  document.getElementById('tab-quiz').classList.toggle('active', !isRem);
+  document.getElementById('tab-rem').classList.toggle('active', isRem);
+  document.getElementById('rem-banner').style.display = isRem ? 'block' : 'none';
+}
+
+// ── Render question ──
+function renderQuestion() {
+  const q = QUESTIONS[current];
+  answered = false;
+
+  const numEl = document.getElementById('q-num');
+  if (q.tag) {
+    numEl.innerHTML = `Question ${current + 1} &nbsp;<span style="font-size:0.68rem;padding:2px 8px;border-radius:999px;background:rgba(251,191,36,0.15);color:var(--amber);font-weight:600;">${q.tag}</span>`;
+  } else {
+    numEl.textContent = `Question ${current + 1}`;
+  }
+  document.getElementById('q-text').textContent = q.q;
+
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  ['A','B','C','D'].forEach((letter, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.innerHTML = `<span class="choice-letter">${letter}</span><span class="choice-text">${q.choices[i]}</span>`;
+    btn.onclick = () => selectAnswer(i);
+    choicesEl.appendChild(btn);
+  });
+
+  document.getElementById('explanation').style.display = 'none';
+  document.getElementById('explanation').className = 'explanation';
+  document.getElementById('btn-next').disabled = true;
+
+  const pct = Math.round((current / QUESTIONS.length) * 100);
+  const label = mode === 'remediation' ? 'Remediation Q' : 'Question';
+  document.getElementById('prog-label').textContent = `${label} ${current + 1} of ${QUESTIONS.length}`;
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('prog-fill').style.width = pct + '%';
+
+  updateChips();
+}
+
+function selectAnswer(idx) {
+  if (answered) return;
+  answered = true;
+
+  const q = QUESTIONS[current];
+  const isCorrect = idx === q.correct;
+  results[current] = { chosen: q.choices[idx], correct: isCorrect };
+
+  const choices = document.querySelectorAll('.choice');
+  choices.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correct) btn.classList.add('reveal-correct');
+  });
+  if (isCorrect) {
+    choices[idx].classList.remove('reveal-correct');
+    choices[idx].classList.add('selected-correct');
+  } else {
+    choices[idx].classList.add('selected-wrong');
+  }
+
+  const expEl = document.getElementById('explanation');
+  expEl.style.display = 'block';
+  expEl.className = 'explanation ' + (isCorrect ? 'correct' : 'wrong');
+  document.getElementById('exp-label').textContent = isCorrect
+    ? '✓ Correct!'
+    : `✗ The correct answer is ${['A','B','C','D'][q.correct]}.`;
+  document.getElementById('exp-body').textContent = q.explanation;
+
+  document.getElementById('btn-next').disabled = false;
+  updateChips();
+}
+
+function updateChips() {
+  const correct = results.filter(r => r && r.correct).length;
+  const wrong = results.filter(r => r && !r.correct).length;
+  document.getElementById('chip-correct').textContent = `✓ ${correct} correct`;
+  document.getElementById('chip-wrong').textContent = `✗ ${wrong} incorrect`;
+}
+
+function nextQ() {
+  if (!answered) return;
+  current++;
+  if (current >= QUESTIONS.length) showSummary();
+  else renderQuestion();
+}
+
+// ── Summary & submission ──
+function showSummary() {
+  document.getElementById('prog-fill').style.width = '100%';
+  document.getElementById('prog-pct').textContent = '100%';
+
+  const correct = results.filter(r => r && r.correct).length;
+  const total = QUESTIONS.length;
+  const pct = Math.round((correct / total) * 100);
+
+  document.getElementById('modal-score').textContent = `${correct}/${total}`;
+  document.getElementById('modal-score').style.color = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('modal-score-label').textContent =
+    pct === 100 ? '🏆 Perfect score!' : pct >= 80 ? '🎉 Great work!' : pct >= 60 ? '📚 Keep studying!' : '💪 Review and try again.';
+  document.getElementById('modal-emoji').textContent = pct === 100 ? '🏆' : pct >= 80 ? '🎉' : pct >= 60 ? '📚' : '💪';
+  document.getElementById('modal-title').textContent = pct === 100 ? 'Perfect Score!' : pct >= 80 ? 'Well Done!' : 'Keep Practicing!';
+  document.getElementById('modal-sub').textContent = 'Lesson 2: Opportunity Cost & Trade-Offs';
+
+  // Student recap
+  document.getElementById('sum-name').textContent = student.name;
+  document.getElementById('sum-id').textContent = student.studentId;
+  document.getElementById('sum-email').textContent = student.email;
+  document.getElementById('sum-mode').textContent = mode === 'quiz' ? 'Original Quiz (5 Qs)' : 'Remediation (10 Qs)';
+
+  // Review list
+  const reviewEl = document.getElementById('review-list');
+  reviewEl.innerHTML = '';
+  QUESTIONS.forEach((q, i) => {
+    const r = results[i];
+    const wasCorrect = r && r.correct;
+    const div = document.createElement('div');
+    div.className = 'review-item';
+    div.innerHTML = `
+      <span class="review-icon">${wasCorrect ? '✅' : '❌'}</span>
+      <div class="review-text">
+        <strong>Q${i+1}: ${q.q.length > 64 ? q.q.slice(0,64)+'…' : q.q}</strong>
+        ${!wasCorrect
+          ? `Your answer: "${r ? r.chosen : '—'}" · Correct: ${['A','B','C','D'][q.correct]}. ${q.choices[q.correct]}`
+          : 'Correct!'}
+      </div>`;
+    reviewEl.appendChild(div);
+  });
+
+  // Remediation CTA
+  document.getElementById('btn-remediation').style.display =
+    (mode === 'quiz' && pct < 80) ? 'block' : 'none';
+
+  document.getElementById('overlay').classList.add('show');
+
+  // Submit to Google Sheets
+  submitToSheets(correct, total, pct);
+}
+
+function submitToSheets(score, total, pct) {
+  const statusEl = document.getElementById('submit-status');
+  const msgEl = document.getElementById('submit-msg');
+  const spinnerEl = document.getElementById('submit-spinner');
+
+  if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    statusEl.className = 'submit-status error';
+    spinnerEl.style.display = 'none';
+    msgEl.textContent = '⚠️ Not submitted — teacher has not configured the Google Sheets URL.';
+    return;
+  }
+
+  statusEl.className = 'submit-status';
+  spinnerEl.style.display = 'block';
+  msgEl.textContent = 'Submitting your answers…';
+
+  const payload = {
+    name: student.name,
+    studentId: student.studentId,
+    email: student.email,
+    mode: mode === 'quiz' ? 'Original Quiz' : 'Remediation',
+    answers: QUESTIONS.map((q, i) => ({
+      question: q.q,
+      chosen: results[i] ? results[i].chosen : '—',
+      correct: results[i] ? results[i].correct : false
+    })),
+    score,
+    total,
+    percent: pct
+  };
+
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(() => {
+    statusEl.className = 'submit-status success';
+    spinnerEl.style.display = 'none';
+    msgEl.textContent = '✓ Answers submitted to your teacher successfully.';
+  })
+  .catch(() => {
+    statusEl.className = 'submit-status error';
+    spinnerEl.style.display = 'none';
+    msgEl.textContent = '✗ Submission failed. Check your internet connection and try again.';
+  });
+}
+
+function restart() {
+  current = 0;
+  answered = false;
+  results = [];
+  document.getElementById('overlay').classList.remove('show');
+  renderQuestion();
+  updateChips();
+  document.getElementById('prog-fill').style.width = '0%';
+  document.getElementById('prog-pct').textContent = '0%';
+}
+
+// Keyboard shortcuts (only active on quiz screen)
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('screen-quiz').classList.contains('active')) return;
+  if (document.getElementById('overlay').classList.contains('show')) return;
+  if (e.key === 'Enter' || e.key === 'ArrowRight') { if (answered) nextQ(); }
+  if (['1','2','3','4'].includes(e.key) && !answered) selectAnswer(parseInt(e.key) - 1);
+});
+</script>
+</body>
+</html>
