@@ -717,10 +717,6 @@ let current = 0;
 let answered = false;
 let results = []; // { chosen: str, correct: bool }
 
-// ── Show setup warning if URL not configured ──
-if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-  document.getElementById('setup-banner').style.display = 'block';
-}
 
 // ── Login screen ──
 function selectMode(m) {
