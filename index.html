@@ -1,67 +1,5 @@
 <!DOCTYPE html>
-<!--
-╔══════════════════════════════════════════════════════════════════════╗
-║           TEACHER SETUP — READ BEFORE UPLOADING TO GITHUB           ║
-╠══════════════════════════════════════════════════════════════════════╣
-║                                                                      ║
-║  STEP 1 — Create a Google Sheet                                      ║
-║    • Go to sheets.google.com and create a new blank spreadsheet.     ║
-║    • Name it anything (e.g. "Econ Quiz Responses").                  ║
-║                                                                      ║
-║  STEP 2 — Add an Apps Script                                         ║
-║    • In the Sheet: Extensions → Apps Script                          ║
-║    • Delete any default code, paste the script below, then Save.    ║
-║                                                                      ║
-║  STEP 3 — Deploy the script                                          ║
-║    • Click Deploy → New deployment                                   ║
-║    • Type: Web app                                                   ║
-║    • Execute as: Me                                                  ║
-║    • Who has access: Anyone                                          ║
-║    • Click Deploy, copy the Web App URL                              ║
-║                                                                      ║
-║  STEP 4 — Paste the URL below                                        ║
-║    • Find SCRIPT_URL near the top of the <script> section           ║
-║    • Replace the placeholder with your copied URL                    ║
-║                                                                      ║
-║  STEP 5 — Push to GitHub Pages & link in Google Classroom           ║
-║    • Commit this file to your repo                                   ║
-║    • GitHub Pages URL → Google Classroom assignment link             ║
-║                                                                      ║
-║  ── APPS SCRIPT TO PASTE ────────────────────────────────────────── ║
-║                                                                      ║
-║  function doPost(e) {                                                ║
-║    try {                                                             ║
-║      var ss = SpreadsheetApp.getActiveSpreadsheet();                 ║
-║      var sheet = ss.getActiveSheet();                                ║
-║      var data = JSON.parse(e.postData.contents);                     ║
-║      if (sheet.getLastRow() === 0) {                                 ║
-║        var h = ['Timestamp','Name','Student ID','Email','Mode'];     ║
-║        for (var i = 0; i < data.answers.length; i++) {              ║
-║          h.push('Q'+(i+1)+' Answer','Q'+(i+1)+' Correct?');         ║
-║        }                                                             ║
-║        h.push('Score','Total','Percent');                            ║
-║        sheet.appendRow(h);                                           ║
-║      }                                                               ║
-║      var row = [new Date().toLocaleString(),                         ║
-║        data.name, data.studentId, data.email, data.mode];           ║
-║      data.answers.forEach(function(a) {                              ║
-║        row.push(a.chosen, a.correct ? 'Yes' : 'No');                ║
-║      });                                                             ║
-║      row.push(data.score, data.total, data.percent+'%');            ║
-║      sheet.appendRow(row);                                           ║
-║      return ContentService                                           ║
-║        .createTextOutput(JSON.stringify({status:'success'}))         ║
-║        .setMimeType(ContentService.MimeType.JSON);                   ║
-║    } catch(err) {                                                    ║
-║      return ContentService                                           ║
-║        .createTextOutput(JSON.stringify({status:'error',             ║
-║          message:err.toString()}))                                   ║
-║        .setMimeType(ContentService.MimeType.JSON);                   ║
-║    }                                                                 ║
-║  }                                                                   ║
-║                                                                      ║
-╚══════════════════════════════════════════════════════════════════════╝
--->
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -483,12 +421,6 @@
 </head>
 <body>
 
-<!-- ── Setup warning (shown when SCRIPT_URL not configured) ── -->
-<div class="setup-banner" id="setup-banner">
-  <h3>⚠️ Teacher Setup Required</h3>
-  <p>The Google Sheets submission URL is not configured. Open this file, find <strong>SCRIPT_URL</strong> near the top of the &lt;script&gt; section, and replace the placeholder with your Apps Script Web App URL. See the comment block at the top of the HTML file for full instructions.</p>
-  <code>const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxy1UEZshJXD4ke0K46m8gvG7bObLmK7hMNy8RSR6xFZI4uxVMFz8jodTLzJcOY85vMYw/exec';</code>
-</div>
 
 <!-- ═══════════════════ SCREEN 1: STUDENT LOGIN ═══════════════════ -->
 <div class="screen active" id="screen-login">
